@@ -13,6 +13,28 @@ class Task {
     this.time,
   });
 
+  // Convert Task to JSON for saving
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'isCompleted': isCompleted,
+      'date': date.toIso8601String(),
+      'time': time,
+    };
+  }
+
+  // Convert JSON back to Task when loading
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'],
+      title: json['title'],
+      isCompleted: json['isCompleted'],
+      date: DateTime.parse(json['date']),
+      time: json['time'],
+    );
+  }
+
   Task copyWith({
     String? id,
     String? title,

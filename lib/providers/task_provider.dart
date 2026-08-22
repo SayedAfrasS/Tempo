@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/task.dart';
 import '../core/utils/date_utils.dart';
 
 class TaskProvider with ChangeNotifier {
   List<Task> _tasks = [];
+  bool _isLoaded = false;
+
+  bool get isLoaded => _isLoaded;
+  List<Task> get tasks => _tasks;
 
   TaskProvider() {
-    _initializeSampleData();
+    _loadTasks();
   }
 
-  void _initializeSampleData() {
-    final today = DateTime.now();
-    final tomorrow = today.add(const Duration(days: 1));
-    final dayAfter = today.add(const Duration(days: 2));
-  }
-
-    // Add this helper method to get unique IDs
-    String generateTaskId() {
-      return DateTime.now().millisecondsSinceEpoch.toString();
+  // Load tasks from local storage
+  Future<void> _loadTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? tasksString = prefs.getString('weekflow_tasks');
+    if (tasksString != null) {
+      final List<dynamic> tasksJson = jsonDecode(tasksString);
+      _tasks = tasksJson.map((json) => Task.fromJson(json)).toList();
     }
+    _isLoaded = true; // Mark as loaded
+    notifyListeners(); // Update UI
+  }
 
-  List<Task> get tasks => _tasks;
+  // Save tasks to local storage
+  Future<void> _saveTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String tasksString = jsonEncode(_tasks.map((t) => t.toJson()).toList());
+    await prefs.setString('weekflow_tasks', tasksString);
+  }
 
   List<Task> getTodayTasks() {
     final today = DateTime.now();
@@ -33,17 +45,6 @@ class TaskProvider with ChangeNotifier {
       task.date.month == date.month &&
       task.date.day == date.day
     ).toList();
-  }
-
-  Map<DateTime, List<Task>> getWeekTasks(DateTime weekStart) {
-    final weekDays = AppDateUtils.getWeekDays(weekStart);
-    final Map<DateTime, List<Task>> tasksByDate = {};
-
-    for (final day in weekDays) {
-      tasksByDate[day] = getTasksForDate(day);
-    }
-
-    return tasksByDate;
   }
 
   int getTodayCompletedCount() {
@@ -66,17 +67,33 @@ class TaskProvider with ChangeNotifier {
       _tasks[index] = _tasks[index].copyWith(
         isCompleted: !_tasks[index].isCompleted,
       );
+      _saveTasks();
       notifyListeners();
     }
   }
 
   void addTask(Task task) {
-        _tasks.add(task);
-        notifyListeners();
+    _tasks.add(task);
+    _saveTasks();
+    notifyListeners();
+  }
+
+  void updateTask(String taskId, {String? title, DateTime? date, String? time}) {
+    final index = _tasks.indexWhere((task) => task.id == taskId);
+    if (index != -1) {
+      _tasks[index] = _tasks[index].copyWith(
+        title: title ?? _tasks[index].title,
+        date: date ?? _tasks[index].date,
+        time: time ?? _tasks[index].time,
+      );
+      _saveTasks();
+      notifyListeners();
+    }
   }
 
   void deleteTask(String taskId) {
-        _tasks.removeWhere((task) => task.id == taskId);
-        notifyListeners();
+    _tasks.removeWhere((task) => task.id == taskId);
+    _saveTasks();
+    notifyListeners();
   }
 }

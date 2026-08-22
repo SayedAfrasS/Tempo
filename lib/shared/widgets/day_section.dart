@@ -10,6 +10,7 @@ class DaySection extends StatelessWidget {
   final bool isToday;
   final Function(String) onToggleTask;
   final Function(String) onDeleteTask;
+  final Function(Task) onEditTask; // <-- Added this
   final VoidCallback onAddTask;
 
   const DaySection({
@@ -19,6 +20,7 @@ class DaySection extends StatelessWidget {
     this.isToday = false,
     required this.onToggleTask,
     required this.onDeleteTask,
+    required this.onEditTask, // <-- Added required here
     required this.onAddTask,
   });
 
@@ -61,45 +63,75 @@ class DaySection extends StatelessWidget {
         const SizedBox(height: 16),
 
         // Tasks
-                // Tasks
-                ...tasks.map((task) => Dismissible(
-                  key: Key(task.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  onDismissed: (direction) => onDeleteTask(task.id),
-                  child: TaskTile(
-                    task: task,
-                    onToggle: () => onToggleTask(task.id),
-                  ),
-                )),
-
-        // Add Task
-        if (tasks.isEmpty || tasks.length < 3)
-          GestureDetector(
-            onTap: onAddTask,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Add Task',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textTertiary,
-                ),
+        if (tasks.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'No tasks for this day',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.textTertiary,
+                fontStyle: FontStyle.italic,
               ),
             ),
+          )
+        else
+          ...tasks.map((task) => Dismissible(
+                key: Key(task.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                onDismissed: (direction) => onDeleteTask(task.id),
+                child: TaskTile(
+                  task: task,
+                  onToggle: () => onToggleTask(task.id),
+                  onEdit: () => onEditTask(task), // <-- Added onEdit callback
+                ),
+              )),
+
+        // Add Task Button
+        GestureDetector(
+          onTap: onAddTask,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.border, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    size: 16,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Add Task',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
           ),
+        ),
 
         const SizedBox(height: 24),
       ],

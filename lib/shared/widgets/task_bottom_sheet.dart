@@ -1,0 +1,243 @@
+import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../core/colors/app_colors.dart';
+import '../../models/task.dart';
+import '../../providers/task_provider.dart';
+
+class TaskBottomSheet extends StatefulWidget {
+  final Task? task; // Null if adding, Task object if editing
+  final DateTime initialDate;
+
+  const TaskBottomSheet({
+    super.key,
+    this.task,
+    required this.initialDate,
+  });
+
+  @override
+  State<TaskBottomSheet> createState() => _TaskBottomSheetState();
+}
+
+class _TaskBottomSheetState extends State<TaskBottomSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _timeController = TextEditingController();
+  late DateTime _selectedDate;
+  String _selectedTime = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.initialDate;
+
+    // If editing, pre-fill the data
+    if (widget.task != null) {
+      _titleController.text = widget.task!.title;
+      _selectedDate = widget.task!.date;
+      _selectedTime = widget.task!.time ?? '';
+      _timeController.text = _selectedTime;
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _timeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: AppColors.primary),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final now = DateTime.now();
+      final selectedDateTime = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+      setState(() {
+        _selectedTime = DateFormat('h:mm a').format(selectedDateTime);
+        _timeController.text = _selectedTime;
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: AppColors.primary),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  void _saveTask() {
+    if (_formKey.currentState!.validate()) {
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+      if (widget.task != null) {
+        // UPDATE EXISTING TASK
+        taskProvider.updateTask(
+          widget.task!.id,
+          title: _titleController.text.trim(),
+          date: _selectedDate,
+          time: _selectedTime.isNotEmpty ? _selectedTime : null,
+        );
+      } else {
+        // ADD NEW TASK
+        taskProvider.addTask(Task(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          title: _titleController.text.trim(),
+          isCompleted: false,
+          date: _selectedDate,
+          time: _selectedTime.isNotEmpty ? _selectedTime : null,
+        ));
+      }
+
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.task != null;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4, margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            Text(
+              isEditing ? 'Edit Task' : 'Add New Task',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 24),
+
+            const Text('Task Title', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _titleController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Enter task title',
+                hintStyle: const TextStyle(color: AppColors.textTertiary),
+                filled: true, fillColor: AppColors.surface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              validator: (value) => (value == null || value.trim().isEmpty) ? 'Please enter a task title' : null,
+            ),
+            const SizedBox(height: 20),
+
+            const Text('Date', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _selectDate(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.calendar, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 12),
+                    Text(DateFormat('EEEE, MMM d, yyyy').format(_selectedDate), style: const TextStyle(fontSize: 16, color: AppColors.textPrimary)),
+                    const Spacer(),
+                    const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            const Text('Time (Optional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _selectTime(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    const Icon(LucideIcons.clock, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      _selectedTime.isNotEmpty ? _selectedTime : 'Select time',
+                      style: TextStyle(fontSize: 16, color: _selectedTime.isNotEmpty ? AppColors.textPrimary : AppColors.textTertiary),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.surface, foregroundColor: AppColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0,
+                    ),
+                    child: const Text('Cancel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _saveTask,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary, foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0,
+                    ),
+                    child: Text(isEditing ? 'Save Changes' : 'Add Task', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}

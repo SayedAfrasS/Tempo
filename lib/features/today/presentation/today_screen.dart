@@ -7,7 +7,7 @@ import '../../../models/task.dart'; // <-- Added this import
 import '../../../providers/task_provider.dart';
 import '../../../shared/widgets/task_tile.dart';
 import '../../../shared/widgets/progress_bar.dart';
-import '../../../shared/widgets/add_task_bottom_sheet.dart';
+   import '../../../shared/widgets/task_bottom_sheet.dart';
 
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key});
@@ -152,10 +152,23 @@ class TodayScreen extends StatelessWidget {
               ),
             );
           },
-          child: TaskTile(
-            task: task,
-            onToggle: () => taskProvider.toggleTask(task.id),
-          ),
+             child: TaskTile(
+               task: task,
+               onToggle: () => taskProvider.toggleTask(task.id),
+               onEdit: () { // ADD THIS BLOCK
+                 showModalBottomSheet(
+                   context: context,
+                   isScrollControlled: true,
+                   backgroundColor: Colors.transparent,
+                   builder: (context) {
+                     return TaskBottomSheet(
+                       task: task, // Pass the task to edit it
+                       initialDate: task.date,
+                     );
+                   },
+                 );
+               },
+             ),
         );
       }).toList(),
     );
@@ -169,11 +182,11 @@ class TodayScreen extends StatelessWidget {
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (context) {
-            return AddTaskBottomSheet(
-              selectedDate: DateTime.now(),
-            );
-          },
+             builder: (context) {
+               return TaskBottomSheet(
+                 initialDate: DateTime.now(),
+               );
+             },
         );
       },
       child: Container(
