@@ -13,55 +13,12 @@ class TaskProvider with ChangeNotifier {
     final today = DateTime.now();
     final tomorrow = today.add(const Duration(days: 1));
     final dayAfter = today.add(const Duration(days: 2));
-
-    _tasks = [
-      // Today's tasks
-      Task(
-        id: '1',
-        title: 'Complete DSA assignment',
-        isCompleted: false,
-        date: today,
-        time: '6:00 PM',
-      ),
-      Task(
-        id: '2',
-        title: 'Practice Sliding Window',
-        isCompleted: false,
-        date: today,
-        time: '8:00 PM',
-      ),
-      Task(
-        id: '3',
-        title: 'Finish ML preprocessing',
-        isCompleted: true,
-        date: today,
-        time: 'Done',
-      ),
-      Task(
-        id: '4',
-        title: 'Read system design notes',
-        isCompleted: false,
-        date: today,
-        time: '9:30 PM',
-      ),
-      // Tomorrow's tasks
-      Task(
-        id: '5',
-        title: 'React project',
-        isCompleted: false,
-        date: tomorrow,
-        time: '10:00 AM',
-      ),
-      // Day after tomorrow
-      Task(
-        id: '6',
-        title: 'DBMS assignment',
-        isCompleted: false,
-        date: dayAfter,
-        time: '5:00 PM',
-      ),
-    ];
   }
+
+    // Add this helper method to get unique IDs
+    String generateTaskId() {
+      return DateTime.now().millisecondsSinceEpoch.toString();
+    }
 
   List<Task> get tasks => _tasks;
 
@@ -114,12 +71,12 @@ class TaskProvider with ChangeNotifier {
   }
 
   void addTask(Task task) {
-    _tasks.add(task);
-    notifyListeners();
+        _tasks.add(task);
+        notifyListeners();
   }
 
   void deleteTask(String taskId) {
-    _tasks.removeWhere((task) => task.id == taskId);
-    notifyListeners();
+        _tasks.removeWhere((task) => task.id == taskId);
+        notifyListeners();
   }
 }

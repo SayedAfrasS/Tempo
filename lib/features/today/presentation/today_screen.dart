@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../core/colors/app_colors.dart';
+import '../../../models/task.dart'; // <-- Added this import
 import '../../../providers/task_provider.dart';
 import '../../../shared/widgets/task_tile.dart';
 import '../../../shared/widgets/progress_bar.dart';
+import '../../../shared/widgets/add_task_bottom_sheet.dart';
 
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key});
@@ -52,9 +54,9 @@ class TodayScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 _buildProgressSection(completed, total, percentage),
                 const SizedBox(height: 32),
-                _buildTaskList(tasks, taskProvider),
+                _buildTaskList(context, tasks, taskProvider), // <-- Pass context here
                 const SizedBox(height: 16),
-                _buildAddTask(),
+                _buildAddTask(context), // <-- Pass context here
               ],
             ),
           );
@@ -120,30 +122,86 @@ class TodayScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskList(List tasks, TaskProvider taskProvider) {
+  // <-- FIXED: Added BuildContext context as the first parameter
+  Widget _buildTaskList(BuildContext context, List<Task> tasks, TaskProvider taskProvider) {
     return Column(
       children: tasks.map((task) {
-        return TaskTile(
-          task: task,
-          onToggle: () => taskProvider.toggleTask(task.id),
+        return Dismissible(
+          key: Key(task.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.delete_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          onDismissed: (direction) {
+            taskProvider.deleteTask(task.id);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Task deleted'),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
+          child: TaskTile(
+            task: task,
+            onToggle: () => taskProvider.toggleTask(task.id),
+          ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildAddTask() {
+  // <-- FIXED: Added BuildContext context as the first parameter
+  Widget _buildAddTask(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // TODO: Implement add task
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) {
+            return AddTaskBottomSheet(
+              selectedDate: DateTime.now(),
+            );
+          },
+        );
       },
-      child: const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          'Add Task',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.textTertiary,
-          ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border, width: 2),
+              ),
+              child: const Icon(
+                Icons.add,
+                size: 16,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Add Task',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
         ),
       ),
     );
