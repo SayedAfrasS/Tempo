@@ -2,36 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
-import '../../../core/colors/app_colors.dart';
-import '../../../models/task.dart'; // <-- Added this import
+import '../../../core/theme/app_theme.dart'; // Replaced AppColors
+import '../../../models/task.dart';
 import '../../../providers/task_provider.dart';
 import '../../../shared/widgets/task_tile.dart';
 import '../../../shared/widgets/progress_bar.dart';
-   import '../../../shared/widgets/task_bottom_sheet.dart';
+import '../../../shared/widgets/task_bottom_sheet.dart';
 
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppThemeExtension>()!;
+    final primary = Theme.of(context).primaryColor;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ext.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: ext.background,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Today',
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: ext.textPrimary,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               LucideIcons.calendar,
-              color: AppColors.textPrimary,
+              color: ext.textPrimary,
               size: 28,
             ),
             onPressed: () {},
@@ -50,13 +53,13 @@ class TodayScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDateSection(),
+                _buildDateSection(ext),
                 const SizedBox(height: 32),
-                _buildProgressSection(completed, total, percentage),
+                _buildProgressSection(ext, completed, total, percentage),
                 const SizedBox(height: 32),
-                _buildTaskList(context, tasks, taskProvider), // <-- Pass context here
+                _buildTaskList(context, tasks, taskProvider),
                 const SizedBox(height: 16),
-                _buildAddTask(context), // <-- Pass context here
+                _buildAddTask(context, ext),
               ],
             ),
           );
@@ -65,7 +68,7 @@ class TodayScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDateSection() {
+  Widget _buildDateSection(AppThemeExtension ext) {
     final now = DateTime.now();
     final dayName = DateFormat('EEEE').format(now);
     final dateString = DateFormat('dd MMMM yyyy').format(now);
@@ -75,25 +78,25 @@ class TodayScreen extends StatelessWidget {
       children: [
         Text(
           dayName,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: ext.textPrimary,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           dateString,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: AppColors.textSecondary,
+            color: ext.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildProgressSection(int completed, int total, double percentage) {
+  Widget _buildProgressSection(AppThemeExtension ext, int completed, int total, double percentage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -102,16 +105,16 @@ class TodayScreen extends StatelessWidget {
           children: [
             Text(
               '$completed of $total tasks completed',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textPrimary,
+                color: ext.textPrimary,
               ),
             ),
             Text(
               '${(percentage * 100).toInt()}%',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: ext.textSecondary,
               ),
             ),
           ],
@@ -122,7 +125,6 @@ class TodayScreen extends StatelessWidget {
     );
   }
 
-  // <-- FIXED: Added BuildContext context as the first parameter
   Widget _buildTaskList(BuildContext context, List<Task> tasks, TaskProvider taskProvider) {
     return Column(
       children: tasks.map((task) {
@@ -133,7 +135,7 @@ class TodayScreen extends StatelessWidget {
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
             decoration: BoxDecoration(
-              color: AppColors.error,
+              color: const Color(0xFFEF4444),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -145,48 +147,47 @@ class TodayScreen extends StatelessWidget {
           onDismissed: (direction) {
             taskProvider.deleteTask(task.id);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Task deleted'),
-                backgroundColor: AppColors.error,
+              SnackBar(
+                content: const Text('Task deleted'),
+                backgroundColor: const Color(0xFFEF4444),
                 behavior: SnackBarBehavior.floating,
               ),
             );
           },
-             child: TaskTile(
-               task: task,
-               onToggle: () => taskProvider.toggleTask(task.id),
-               onEdit: () { // ADD THIS BLOCK
-                 showModalBottomSheet(
-                   context: context,
-                   isScrollControlled: true,
-                   backgroundColor: Colors.transparent,
-                   builder: (context) {
-                     return TaskBottomSheet(
-                       task: task, // Pass the task to edit it
-                       initialDate: task.date,
-                     );
-                   },
-                 );
-               },
-             ),
+          child: TaskTile(
+            task: task,
+            onToggle: () => taskProvider.toggleTask(task.id),
+            onEdit: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) {
+                  return TaskBottomSheet(
+                    task: task,
+                    initialDate: task.date,
+                  );
+                },
+              );
+            },
+          ),
         );
       }).toList(),
     );
   }
 
-  // <-- FIXED: Added BuildContext context as the first parameter
-  Widget _buildAddTask(BuildContext context) {
+  Widget _buildAddTask(BuildContext context, AppThemeExtension ext) {
     return GestureDetector(
       onTap: () {
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-             builder: (context) {
-               return TaskBottomSheet(
-                 initialDate: DateTime.now(),
-               );
-             },
+          builder: (context) {
+            return TaskBottomSheet(
+              initialDate: DateTime.now(),
+            );
+          },
         );
       },
       child: Container(
@@ -198,20 +199,20 @@ class TodayScreen extends StatelessWidget {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border, width: 2),
+                border: Border.all(color: ext.border, width: 2),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.add,
                 size: 16,
-                color: AppColors.textTertiary,
+                color: ext.textTertiary,
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               'Add Task',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textTertiary,
+                color: ext.textTertiary,
               ),
             ),
           ],

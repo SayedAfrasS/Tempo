@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../core/colors/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/task.dart';
 import '../../providers/task_provider.dart';
 
 class TaskBottomSheet extends StatefulWidget {
-  final Task? task; // Null if adding, Task object if editing
+  final Task? task;
   final DateTime initialDate;
 
   const TaskBottomSheet({
@@ -32,7 +32,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
     super.initState();
     _selectedDate = widget.initialDate;
 
-    // If editing, pre-fill the data
     if (widget.task != null) {
       _titleController.text = widget.task!.title;
       _selectedDate = widget.task!.date;
@@ -49,13 +48,14 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   }
 
   Future<void> _selectTime(BuildContext context) async {
+    final primary = Theme.of(context).primaryColor;
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: AppColors.primary),
+            colorScheme: ColorScheme.light(primary: primary),
           ),
           child: child!,
         );
@@ -73,6 +73,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final primary = Theme.of(context).primaryColor;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -81,7 +82,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: AppColors.primary),
+            colorScheme: ColorScheme.light(primary: primary),
           ),
           child: child!,
         );
@@ -100,7 +101,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
       final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
       if (widget.task != null) {
-        // UPDATE EXISTING TASK
         taskProvider.updateTask(
           widget.task!.id,
           title: _titleController.text.trim(),
@@ -108,7 +108,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           time: _selectedTime.isNotEmpty ? _selectedTime : null,
         );
       } else {
-        // ADD NEW TASK
         taskProvider.addTask(Task(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           title: _titleController.text.trim(),
@@ -124,13 +123,15 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppThemeExtension>()!;
+    final primary = Theme.of(context).primaryColor;
     final isEditing = widget.task != null;
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: ext.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Form(
         key: _formKey,
@@ -141,24 +142,25 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
             Center(
               child: Container(
                 width: 40, height: 4, margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: ext.border, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Text(
               isEditing ? 'Edit Task' : 'Add New Task',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: ext.textPrimary),
             ),
             const SizedBox(height: 24),
 
-            const Text('Task Title', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            Text('Task Title', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ext.textPrimary)),
             const SizedBox(height: 8),
             TextFormField(
               controller: _titleController,
               autofocus: true,
+              style: TextStyle(color: ext.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Enter task title',
-                hintStyle: const TextStyle(color: AppColors.textTertiary),
-                filled: true, fillColor: AppColors.surface,
+                hintStyle: TextStyle(color: ext.textTertiary),
+                filled: true, fillColor: ext.surface,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -166,43 +168,43 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
             ),
             const SizedBox(height: 20),
 
-            const Text('Date', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            Text('Date', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ext.textPrimary)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => _selectDate(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: ext.surface, borderRadius: BorderRadius.circular(12)),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.calendar, color: AppColors.primary, size: 20),
+                    Icon(LucideIcons.calendar, color: primary, size: 20),
                     const SizedBox(width: 12),
-                    Text(DateFormat('EEEE, MMM d, yyyy').format(_selectedDate), style: const TextStyle(fontSize: 16, color: AppColors.textPrimary)),
+                    Text(DateFormat('EEEE, MMM d, yyyy').format(_selectedDate), style: TextStyle(fontSize: 16, color: ext.textPrimary)),
                     const Spacer(),
-                    const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+                    Icon(Icons.chevron_right, color: ext.textSecondary, size: 20),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            const Text('Time (Optional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            Text('Time (Optional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ext.textPrimary)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => _selectTime(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: ext.surface, borderRadius: BorderRadius.circular(12)),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.clock, color: AppColors.primary, size: 20),
+                    Icon(LucideIcons.clock, color: primary, size: 20),
                     const SizedBox(width: 12),
                     Text(
                       _selectedTime.isNotEmpty ? _selectedTime : 'Select time',
-                      style: TextStyle(fontSize: 16, color: _selectedTime.isNotEmpty ? AppColors.textPrimary : AppColors.textTertiary),
+                      style: TextStyle(fontSize: 16, color: _selectedTime.isNotEmpty ? ext.textPrimary : ext.textTertiary),
                     ),
                     const Spacer(),
-                    const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+                    Icon(Icons.chevron_right, color: ext.textSecondary, size: 20),
                   ],
                 ),
               ),
@@ -215,7 +217,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.surface, foregroundColor: AppColors.textPrimary,
+                      backgroundColor: ext.surface, foregroundColor: ext.textPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0,
                     ),
                     child: const Text('Cancel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -226,7 +228,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                   child: ElevatedButton(
                     onPressed: _saveTask,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary, foregroundColor: AppColors.white,
+                      backgroundColor: primary, foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0,
                     ),
                     child: Text(isEditing ? 'Save Changes' : 'Add Task', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/colors/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_utils.dart';
 import '../../models/task.dart';
 import 'task_tile.dart';
@@ -10,7 +10,7 @@ class DaySection extends StatelessWidget {
   final bool isToday;
   final Function(String) onToggleTask;
   final Function(String) onDeleteTask;
-  final Function(Task) onEditTask; // <-- Added this
+  final Function(Task) onEditTask;
   final VoidCallback onAddTask;
 
   const DaySection({
@@ -20,19 +20,20 @@ class DaySection extends StatelessWidget {
     this.isToday = false,
     required this.onToggleTask,
     required this.onDeleteTask,
-    required this.onEditTask, // <-- Added required here
+    required this.onEditTask,
     required this.onAddTask,
   });
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppThemeExtension>()!;
+    final primary = Theme.of(context).primaryColor;
     final dayMonth = AppDateUtils.getDayMonth(date);
     final dayName = AppDateUtils.getShortDayName(date);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Date Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -41,28 +42,22 @@ class DaySection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: isToday ? AppColors.primary : AppColors.textPrimary,
+                color: isToday ? primary : ext.textPrimary,
               ),
             ),
             Text(
               dayName,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 16, color: ext.textSecondary),
             ),
           ],
         ),
         const SizedBox(height: 8),
-
-        // Divider
         Container(
           height: 2,
-          color: isToday ? AppColors.primary : AppColors.borderLight,
+          color: isToday ? primary : ext.border,
         ),
         const SizedBox(height: 16),
 
-        // Tasks
         if (tasks.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -70,7 +65,7 @@ class DaySection extends StatelessWidget {
               'No tasks for this day',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textTertiary,
+                color: ext.textTertiary,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -83,24 +78,19 @@ class DaySection extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20),
                   decoration: BoxDecoration(
-                    color: AppColors.error,
+                    color: const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
                 ),
                 onDismissed: (direction) => onDeleteTask(task.id),
                 child: TaskTile(
                   task: task,
                   onToggle: () => onToggleTask(task.id),
-                  onEdit: () => onEditTask(task), // <-- Added onEdit callback
+                  onEdit: () => onEditTask(task),
                 ),
               )),
 
-        // Add Task Button
         GestureDetector(
           onTap: onAddTask,
           child: Padding(
@@ -112,27 +102,19 @@ class DaySection extends StatelessWidget {
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.border, width: 2),
+                    border: Border.all(color: ext.border, width: 2),
                   ),
-                  child: const Icon(
-                    Icons.add,
-                    size: 16,
-                    color: AppColors.textTertiary,
-                  ),
+                  child: Icon(Icons.add, size: 16, color: ext.textTertiary),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Add Task',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textTertiary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: ext.textTertiary),
                 ),
               ],
             ),
           ),
         ),
-
         const SizedBox(height: 24),
       ],
     );

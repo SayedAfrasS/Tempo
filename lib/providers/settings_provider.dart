@@ -1,50 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../core/theme/app_theme.dart';
 
 class SettingsProvider with ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
-  Color _accentColor = const Color(0xFF5B6CFF);
-  DayOfWeek _weekStartsOn = DayOfWeek.monday;
+  WeekFlowTheme _theme = AppThemes.jay;
+  WeekStart _weekStartsOn = WeekStart.monday;
   bool _taskReminders = true;
-  bool _dailySummary = false;
+  ReminderCycle _reminderCycle = ReminderCycle.hours2;
+  String _userName = '';
+  bool _isLoaded = false;
 
-  ThemeMode get themeMode => _themeMode;
-  Color get accentColor => _accentColor;
-  DayOfWeek get weekStartsOn => _weekStartsOn;
+  bool get isLoaded => _isLoaded;
+  WeekFlowTheme get theme => _theme;
+  WeekStart get weekStartsOn => _weekStartsOn;
   bool get taskReminders => _taskReminders;
-  bool get dailySummary => _dailySummary;
+  ReminderCycle get reminderCycle => _reminderCycle;
+  String get userName => _userName;
 
-  void setThemeMode(ThemeMode mode) {
-    _themeMode = mode;
+  SettingsProvider() {
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final themeId = prefs.getString('theme_id') ?? 'jay';
+    _theme = AppThemes.all.firstWhere(
+      (t) => t.id == themeId,
+      orElse: () => AppThemes.jay,
+    );
+
+    final weekIndex = prefs.getInt('week_starts_on') ?? 0;
+    _weekStartsOn = WeekStart.values[weekIndex];
+
+    _taskReminders = prefs.getBool('task_reminders') ?? true;
+
+    final cycleIndex = prefs.getInt('reminder_cycle') ?? 0;
+    _reminderCycle = ReminderCycle.values[cycleIndex];
+
+    _userName = prefs.getString('user_name') ?? '';
+
+    _isLoaded = true;
     notifyListeners();
   }
 
-  void setAccentColor(Color color) {
-    _accentColor = color;
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme_id', _theme.id);
+    await prefs.setInt('week_starts_on', _weekStartsOn.index);
+    await prefs.setBool('task_reminders', _taskReminders);
+    await prefs.setInt('reminder_cycle', _reminderCycle.index);
+    await prefs.setString('user_name', _userName);
+  }
+
+  void setTheme(WeekFlowTheme theme) {
+    _theme = theme;
+    _saveSettings();
     notifyListeners();
   }
 
-  void setWeekStartsOn(DayOfWeek day) {
+  void setWeekStartsOn(WeekStart day) {
     _weekStartsOn = day;
+    _saveSettings();
     notifyListeners();
   }
 
   void setTaskReminders(bool value) {
     _taskReminders = value;
+    _saveSettings();
     notifyListeners();
   }
 
-  void setDailySummary(bool value) {
-    _dailySummary = value;
+  void setReminderCycle(ReminderCycle cycle) {
+    _reminderCycle = cycle;
+    _saveSettings();
+    notifyListeners();
+  }
+
+  void setUserName(String name) {
+    _userName = name;
+    _saveSettings();
     notifyListeners();
   }
 }
 
-enum DayOfWeek {
-  monday,
-  tuesday,
-  wednesday,
-  thursday,
-  friday,
-  saturday,
-  sunday,
-}
+enum WeekStart { monday, sunday }
+
+enum ReminderCycle { hours2, hours4, hours6, hours8 }

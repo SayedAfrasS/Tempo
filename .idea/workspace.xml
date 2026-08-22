@@ -6,14 +6,18 @@
   <component name="ChangeListManager">
     <list default="true" id="7a2e8cbe-4a5a-477a-8bf3-4cf31d062d17" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/theme/app_theme.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/theme/app_theme.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/settings/presentation/settings_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/settings/presentation/settings_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/today/presentation/today_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/today/presentation/today_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/features/week_planner/presentation/week_planner_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/week_planner/presentation/week_planner_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/task.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/task.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/providers/task_provider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/providers/task_provider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/shared/widgets/add_task_bottom_sheet.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/providers/settings_provider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/providers/settings_provider.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/shared/navigation/bottom_nav_bar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/shared/navigation/bottom_nav_bar.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/shared/widgets/day_section.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/shared/widgets/day_section.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/shared/widgets/progress_bar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/shared/widgets/progress_bar.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/shared/widgets/settings_tile.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/shared/widgets/settings_tile.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/shared/widgets/task_bottom_sheet.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/shared/widgets/task_bottom_sheet.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/shared/widgets/task_tile.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/shared/widgets/task_tile.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

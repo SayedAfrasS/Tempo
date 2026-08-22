@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
-import '../../../core/colors/app_colors.dart';
-import '../../../models/task.dart'; // <-- ADD THIS LINE
+import '../../../core/theme/app_theme.dart'; // Added for AppThemeExtension
+import '../../../models/task.dart';
 import '../../../providers/task_provider.dart';
+import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/day_section.dart';
 import '../../../shared/widgets/task_bottom_sheet.dart';
 
@@ -23,7 +24,8 @@ class _WeekPlannerScreenState extends State<WeekPlannerScreen> {
   @override
   void initState() {
     super.initState();
-    _weekStart = _getStartOfWeek(DateTime.now());
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    _weekStart = _getStartOfWeek(DateTime.now(), settings.weekStartsOn);
   }
 
   @override
@@ -32,10 +34,12 @@ class _WeekPlannerScreenState extends State<WeekPlannerScreen> {
     super.dispose();
   }
 
-  DateTime _getStartOfWeek(DateTime date) {
+  DateTime _getStartOfWeek(DateTime date, WeekStart weekStart) {
     final cleanDate = DateTime(date.year, date.month, date.day);
-    final daysToSubtract = cleanDate.weekday - DateTime.monday;
-    return cleanDate.subtract(Duration(days: daysToSubtract));
+    if (weekStart == WeekStart.sunday) {
+      return cleanDate.subtract(Duration(days: cleanDate.weekday % 7));
+    }
+    return cleanDate.subtract(Duration(days: cleanDate.weekday - 1));
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -83,6 +87,8 @@ class _WeekPlannerScreenState extends State<WeekPlannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppThemeExtension>()!;
+    final primary = Theme.of(context).primaryColor;
     final weekDays = List.generate(7, (i) => _weekStart.add(Duration(days: i)));
 
     // 🎯 THE MAGIC: Split the week into "past days" and "today + future days"
@@ -94,45 +100,45 @@ class _WeekPlannerScreenState extends State<WeekPlannerScreen> {
     return Consumer<TaskProvider>(
       builder: (context, taskProvider, child) {
         if (!taskProvider.isLoaded) {
-          return const Scaffold(
-            backgroundColor: AppColors.background,
-            body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          return Scaffold(
+            backgroundColor: ext.background,
+            body: Center(child: CircularProgressIndicator(color: primary)),
           );
         }
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: ext.background,
           appBar: AppBar(
-            backgroundColor: AppColors.background,
+            backgroundColor: ext.background,
             elevation: 0,
             title: Text(
               DateFormat('MMM yyyy').format(_weekStart),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: ext.textPrimary,
               ),
             ),
             actions: [
               IconButton(
                 icon: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryLight,
+                  decoration: BoxDecoration(
+                    color: ext.primaryLight,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(LucideIcons.chevronLeft, color: AppColors.primary, size: 20),
+                  child: Icon(LucideIcons.chevronLeft, color: primary, size: 20),
                 ),
                 onPressed: () => _changeWeek(-7),
               ),
               IconButton(
                 icon: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryLight,
+                  decoration: BoxDecoration(
+                    color: ext.primaryLight,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(LucideIcons.chevronRight, color: AppColors.primary, size: 20),
+                  child: Icon(LucideIcons.chevronRight, color: primary, size: 20),
                 ),
                 onPressed: () => _changeWeek(7),
               ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/colors/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/task.dart';
 
 class TaskTile extends StatelessWidget {
   final Task task;
   final VoidCallback onToggle;
-  final VoidCallback? onEdit; // Added this
+  final VoidCallback? onEdit;
 
   const TaskTile({
     super.key,
@@ -16,11 +16,12 @@ class TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeExtension = Theme.of(context).extension<AppThemeExtension>()!;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          // Tap the text to edit
           Expanded(
             child: GestureDetector(
               onTap: onEdit,
@@ -28,7 +29,7 @@ class TaskTile extends StatelessWidget {
                 task.title,
                 style: TextStyle(
                   fontSize: 16,
-                  color: task.isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
+                  color: task.isCompleted ? themeExtension.textTertiary : null,
                   decoration: task.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
                   fontWeight: FontWeight.w400,
                 ),
@@ -36,17 +37,26 @@ class TaskTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Tap the circle to toggle complete
           GestureDetector(
             onTap: onToggle,
             child: Container(
-              width: 24, height: 24,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: task.isCompleted ? AppColors.black : AppColors.grayLight, width: 2),
-                color: task.isCompleted ? AppColors.black : AppColors.white,
+                border: Border.all(
+                  color: task.isCompleted
+                      ? Theme.of(context).primaryColor
+                      : themeExtension.border,
+                  width: 2,
+                ),
+                color: task.isCompleted
+                    ? Theme.of(context).primaryColor
+                    : themeExtension.background,
               ),
-              child: task.isCompleted ? const Icon(Icons.check, color: AppColors.white, size: 14) : null,
+              child: task.isCompleted
+                  ? const Icon(Icons.check, color: Colors.white, size: 14)
+                  : null,
             ),
           ),
         ],
