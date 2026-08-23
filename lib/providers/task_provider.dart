@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/task.dart';
 import '../core/utils/date_utils.dart';
+import '../core/services/notification_service.dart';
+import 'settings_provider.dart';
 
 class TaskProvider with ChangeNotifier {
   List<Task> _tasks = [];
@@ -12,10 +14,11 @@ class TaskProvider with ChangeNotifier {
   List<Task> get tasks => _tasks;
 
   TaskProvider() {
+    // Let SettingsProvider reschedule notifications when settings change
+    SettingsProvider.tasksProvider = () => _tasks;
     _loadTasks();
   }
 
-  // Load tasks from local storage
   Future<void> _loadTasks() async {
     final prefs = await SharedPreferences.getInstance();
     final String? tasksString = prefs.getString('weekflow_tasks');
@@ -23,11 +26,12 @@ class TaskProvider with ChangeNotifier {
       final List<dynamic> tasksJson = jsonDecode(tasksString);
       _tasks = tasksJson.map((json) => Task.fromJson(json)).toList();
     }
-    _isLoaded = true; // Mark as loaded
-    notifyListeners(); // Update UI
+    // Schedule reminders for existing tasks on startup
+    await NotificationService.instance.scheduleAll(_tasks);
+    _isLoaded = true;
+    notifyListeners();
   }
 
-  // Save tasks to local storage
   Future<void> _saveTasks() async {
     final prefs = await SharedPreferences.getInstance();
     final String tasksString = jsonEncode(_tasks.map((t) => t.toJson()).toList());
@@ -35,7 +39,6 @@ class TaskProvider with ChangeNotifier {
   }
 
   List<Task> getTodayTasks() {
-    final today = DateTime.now();
     return _tasks.where((task) => AppDateUtils.isToday(task.date)).toList();
   }
 
@@ -67,6 +70,7 @@ class TaskProvider with ChangeNotifier {
       _tasks[index] = _tasks[index].copyWith(
         isCompleted: !_tasks[index].isCompleted,
       );
+      NotificationService.instance.scheduleForTask(_tasks[index]); // Cancel if done, reschedule if undone
       _saveTasks();
       notifyListeners();
     }
@@ -74,6 +78,7 @@ class TaskProvider with ChangeNotifier {
 
   void addTask(Task task) {
     _tasks.add(task);
+    NotificationService.instance.scheduleForTask(task);
     _saveTasks();
     notifyListeners();
   }
@@ -86,12 +91,15 @@ class TaskProvider with ChangeNotifier {
         date: date ?? _tasks[index].date,
         time: time ?? _tasks[index].time,
       );
+      NotificationService.instance.scheduleForTask(_tasks[index]);
       _saveTasks();
       notifyListeners();
     }
   }
 
   void deleteTask(String taskId) {
+    final task = _tasks.firstWhere((t) => t.id == taskId);
+    NotificationService.instance.cancelForTask(task);
     _tasks.removeWhere((task) => task.id == taskId);
     _saveTasks();
     notifyListeners();

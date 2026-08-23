@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme/app_theme.dart';
+import '../core/services/notification_service.dart';
+import '../models/task.dart';
 
 class SettingsProvider with ChangeNotifier {
+  // Hook so we can reschedule notifications when settings change
+  static List<Task> Function()? tasksProvider;
+
   WeekFlowTheme _theme = AppThemes.jay;
   WeekStart _weekStartsOn = WeekStart.monday;
   bool _taskReminders = true;
@@ -16,6 +21,15 @@ class SettingsProvider with ChangeNotifier {
   bool get taskReminders => _taskReminders;
   ReminderCycle get reminderCycle => _reminderCycle;
   String get userName => _userName;
+
+  int get reminderCycleHours {
+    switch (_reminderCycle) {
+      case ReminderCycle.hours2: return 2;
+      case ReminderCycle.hours4: return 4;
+      case ReminderCycle.hours6: return 6;
+      case ReminderCycle.hours8: return 8;
+    }
+  }
 
   SettingsProvider() {
     _loadSettings();
@@ -39,6 +53,12 @@ class SettingsProvider with ChangeNotifier {
     _reminderCycle = ReminderCycle.values[cycleIndex];
 
     _userName = prefs.getString('user_name') ?? '';
+
+    // Sync notification service with saved settings
+    NotificationService.instance.configure(
+      enabled: _taskReminders,
+      cycleHours: reminderCycleHours,
+    );
 
     _isLoaded = true;
     notifyListeners();
@@ -67,12 +87,19 @@ class SettingsProvider with ChangeNotifier {
 
   void setTaskReminders(bool value) {
     _taskReminders = value;
+    NotificationService.instance.configure(enabled: value, cycleHours: reminderCycleHours);
+    if (value) {
+      // Re-schedule all tasks when turning reminders back ON
+      NotificationService.instance.scheduleAll(tasksProvider?.call() ?? []);
+    }
     _saveSettings();
     notifyListeners();
   }
 
   void setReminderCycle(ReminderCycle cycle) {
     _reminderCycle = cycle;
+    NotificationService.instance.configure(enabled: _taskReminders, cycleHours: reminderCycleHours);
+    NotificationService.instance.scheduleAll(tasksProvider?.call() ?? []);
     _saveSettings();
     notifyListeners();
   }
