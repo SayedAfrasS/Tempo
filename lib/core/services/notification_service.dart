@@ -29,7 +29,6 @@ class NotificationService {
 
     tz_data.initializeTimeZones();
     try {
-      // FIX 1: flutter_timezone now returns a TimezoneInfo object
       final TimezoneInfo timeZoneInfo = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timeZoneInfo.identifier));
     } catch (_) {
@@ -41,7 +40,6 @@ class NotificationService {
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings();
 
-    // FIX 2: initialize() now uses named arguments (settings:)
     await _plugin.initialize(
       settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
     );
@@ -65,9 +63,12 @@ class NotificationService {
     DateTime dt = DateTime(day.year, day.month, day.day, 9, 0);
     if (task.time != null && task.time!.isNotEmpty) {
       try {
-        final DateTime parsed = DateFormat('h:mm a').parse(task.time!);
+        // 🎯 FIX: Added 'en_US' locale so "AM/PM" always parses correctly regardless of phone language
+        final DateTime parsed = DateFormat('h:mm a', 'en_US').parse(task.time!);
         dt = DateTime(day.year, day.month, day.day, parsed.hour, parsed.minute);
-      } catch (_) {}
+      } catch (e) {
+        print('Error parsing time: $e');
+      }
     }
     return dt;
   }
@@ -95,8 +96,6 @@ class NotificationService {
       final DateTime when = times[i];
       if (!when.isAfter(DateTime.now())) continue;
 
-      // FIX 3 & 4: zonedSchedule() now uses named arguments, and
-      // uiLocalNotificationDateInterpretation was removed in v18+
       await _plugin.zonedSchedule(
         id: _baseId(task) + i,
         title: i == 0 ? 'Task due now' : 'Still pending',
@@ -119,7 +118,6 @@ class NotificationService {
   Future<void> cancelForTask(Task task) async {
     final int base = _baseId(task);
     for (int i = 0; i < 4; i++) {
-      // FIX 5: cancel() now uses named arguments (id:)
       await _plugin.cancel(id: base + i);
     }
   }
@@ -134,4 +132,24 @@ class NotificationService {
   Future<void> cancelAll() async {
     await _plugin.cancelAll();
   }
+
+  // 🎯 NEW: Test Notification Method
+    Future<void> showTestNotification() async {
+      if (!_initialized) await init();
+
+      // FIX: Added named arguments (id:, title:, body:, notificationDetails:)
+      await _plugin.show(
+        id: 9999,
+        title: 'Tempo Notifications Work!',
+        body: 'If you see this, the notification system is perfectly set up.',
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'weekflow_tests',
+            'Test notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+      );
+    }
 }
