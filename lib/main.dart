@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
-import 'core/services/notification_service.dart';
 import 'providers/task_provider.dart';
 import 'providers/settings_provider.dart';
 import 'shared/navigation/bottom_nav_bar.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.instance.init(); // Start notifications before the app runs
+void main() {
   runApp(const WeekFlowApp());
 }
 
@@ -31,7 +28,7 @@ class WeekFlowApp extends StatelessWidget {
           }
 
           return MaterialApp(
-            title: 'WeekFlow',
+            title: 'Tempo',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.getTheme(settingsProvider.theme),
             home: const BottomNavBar(),

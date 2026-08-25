@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/services/notification_service.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/settings_tile.dart';
 import '../../../shared/widgets/theme_picker_bottom_sheet.dart';
@@ -13,7 +12,6 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppThemeExtension>()!;
-    final primary = Theme.of(context).primaryColor; // <-- ADDED THIS
 
     return Scaffold(
       backgroundColor: ext.background,
@@ -49,32 +47,6 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 onTap: () => _showSheet(context, const WeekStartPickerSheet()),
               ),
-
-              // NOTIFICATIONS
-              const SettingsSectionHeader(title: 'NOTIFICATIONS'),
-              SettingsTile(
-                title: 'Task reminders',
-                trailing: Switch(
-                  value: settings.taskReminders,
-                  onChanged: settings.setTaskReminders,
-                ),
-              ),
-              if (settings.taskReminders)
-                SettingsTile(
-                  title: 'Reminder cycle',
-                  trailing: _trailingText(context, _cycleName(settings.reminderCycle)),
-                  onTap: () => _showSheet(context, const ReminderCyclePickerSheet()),
-                ),
-
-              // 🎯 ADDED TEST BUTTON HERE
-              if (settings.taskReminders)
-                SettingsTile(
-                  title: 'Send Test Notification',
-                  trailing: Icon(Icons.send, color: primary),
-                  onTap: () async {
-                    await NotificationService.instance.showTestNotification();
-                  },
-                ),
 
               // ACCOUNT
               const SettingsSectionHeader(title: 'ACCOUNT'),
@@ -121,18 +93,5 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => child,
     );
-  }
-
-  String _cycleName(ReminderCycle cycle) {
-    switch (cycle) {
-      case ReminderCycle.hours2:
-        return '2 hr';
-      case ReminderCycle.hours4:
-        return '4 hr';
-      case ReminderCycle.hours6:
-        return '6 hr';
-      case ReminderCycle.hours8:
-        return '8 hr';
-    }
   }
 }

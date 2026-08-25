@@ -149,65 +149,6 @@ class WeekStartPickerSheet extends StatelessWidget {
   }
 }
 
-// ---------- Reminder Cycle Picker ----------
-class ReminderCyclePickerSheet extends StatelessWidget {
-  const ReminderCyclePickerSheet({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
-
-    return _SheetScaffold(
-      title: 'Reminder cycle',
-      children: [
-        _OptionTile(
-          icon: Icons.notifications_active_outlined,
-          title: '2 hours',
-          subtitle: 'Notify me every 2 hours',
-          isSelected: settings.reminderCycle == ReminderCycle.hours2,
-          onTap: () {
-            settings.setReminderCycle(ReminderCycle.hours2);
-            Navigator.pop(context);
-          },
-        ),
-        const SizedBox(height: 12),
-        _OptionTile(
-          icon: Icons.notifications_active_outlined,
-          title: '4 hours',
-          subtitle: 'Notify me every 4 hours',
-          isSelected: settings.reminderCycle == ReminderCycle.hours4,
-          onTap: () {
-            settings.setReminderCycle(ReminderCycle.hours4);
-            Navigator.pop(context);
-          },
-        ),
-        const SizedBox(height: 12),
-        _OptionTile(
-          icon: Icons.notifications_outlined,
-          title: '6 hours',
-          subtitle: 'Notify me every 6 hours',
-          isSelected: settings.reminderCycle == ReminderCycle.hours6,
-          onTap: () {
-            settings.setReminderCycle(ReminderCycle.hours6);
-            Navigator.pop(context);
-          },
-        ),
-        const SizedBox(height: 12),
-        _OptionTile(
-          icon: Icons.notifications_none,
-          title: '8 hours',
-          subtitle: 'Notify me every 8 hours',
-          isSelected: settings.reminderCycle == ReminderCycle.hours8,
-          onTap: () {
-            settings.setReminderCycle(ReminderCycle.hours8);
-            Navigator.pop(context);
-          },
-        ),
-      ],
-    );
-  }
-}
-
 // ---------- Profile Sheet (User Name) ----------
 class ProfileSheet extends StatefulWidget {
   const ProfileSheet({super.key});

@@ -23,9 +23,7 @@ class TaskBottomSheet extends StatefulWidget {
 class _TaskBottomSheetState extends State<TaskBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _timeController = TextEditingController();
   late DateTime _selectedDate;
-  String _selectedTime = '';
 
   @override
   void initState() {
@@ -35,41 +33,13 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
     if (widget.task != null) {
       _titleController.text = widget.task!.title;
       _selectedDate = widget.task!.date;
-      _selectedTime = widget.task!.time ?? '';
-      _timeController.text = _selectedTime;
     }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
-    _timeController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final primary = Theme.of(context).primaryColor;
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: primary),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      final now = DateTime.now();
-      final selectedDateTime = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
-      setState(() {
-        _selectedTime = DateFormat('h:mm a').format(selectedDateTime);
-        _timeController.text = _selectedTime;
-      });
-    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -105,7 +75,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           widget.task!.id,
           title: _titleController.text.trim(),
           date: _selectedDate,
-          time: _selectedTime.isNotEmpty ? _selectedTime : null,
         );
       } else {
         taskProvider.addTask(Task(
@@ -113,7 +82,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           title: _titleController.text.trim(),
           isCompleted: false,
           date: _selectedDate,
-          time: _selectedTime.isNotEmpty ? _selectedTime : null,
         ));
       }
 
@@ -180,29 +148,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                     Icon(LucideIcons.calendar, color: primary, size: 20),
                     const SizedBox(width: 12),
                     Text(DateFormat('EEEE, MMM d, yyyy').format(_selectedDate), style: TextStyle(fontSize: 16, color: ext.textPrimary)),
-                    const Spacer(),
-                    Icon(Icons.chevron_right, color: ext.textSecondary, size: 20),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            Text('Time (Optional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ext.textPrimary)),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () => _selectTime(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(color: ext.surface, borderRadius: BorderRadius.circular(12)),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.clock, color: primary, size: 20),
-                    const SizedBox(width: 12),
-                    Text(
-                      _selectedTime.isNotEmpty ? _selectedTime : 'Select time',
-                      style: TextStyle(fontSize: 16, color: _selectedTime.isNotEmpty ? ext.textPrimary : ext.textTertiary),
-                    ),
                     const Spacer(),
                     Icon(Icons.chevron_right, color: ext.textSecondary, size: 20),
                   ],
