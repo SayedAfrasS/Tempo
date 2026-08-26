@@ -3,6 +3,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/today/presentation/today_screen.dart';
 import '../../features/week_planner/presentation/week_planner_screen.dart';
+import '../../features/month/presentation/month_view_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -17,6 +18,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
   final List<Widget> _screens = const [
     WeekPlannerScreen(),
+    MonthViewScreen(),
     TodayScreen(),
     SettingsScreen(),
   ];
@@ -45,6 +47,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
           unselectedFontSize: 12,
           items: const [
             BottomNavigationBarItem(icon: Icon(LucideIcons.home, size: 24), label: 'Week'),
+            BottomNavigationBarItem(icon: Icon(LucideIcons.calendar, size: 24), label: 'Month'),
             BottomNavigationBarItem(icon: Icon(LucideIcons.sun, size: 24), label: 'Today'),
             BottomNavigationBarItem(icon: Icon(LucideIcons.settings, size: 24), label: 'Settings'),
           ],

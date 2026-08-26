@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../month/presentation/month_view_screen.dart';
 import '../../../models/task.dart';
 import '../../../models/task_category.dart';
 import '../../../providers/task_provider.dart';
@@ -34,10 +35,15 @@ class _TodayScreenState extends State<TodayScreen> {
           style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: ext.textPrimary),
         ),
         actions: [
-          IconButton(
-            icon: Icon(LucideIcons.calendar, color: ext.textPrimary, size: 28),
-            onPressed: () {},
-          ),
+                    IconButton(
+                      icon: Icon(LucideIcons.calendar, color: ext.textPrimary, size: 28),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MonthViewScreen()),
+                        );
+                      },
+                    ),
         ],
       ),
       body: Consumer<TaskProvider>(
