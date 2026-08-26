@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/task.dart';
+import '../../models/task_category.dart';
 
 class TaskTile extends StatelessWidget {
   final Task task;
@@ -16,7 +17,8 @@ class TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeExtension = Theme.of(context).extension<AppThemeExtension>()!;
+    final ext = Theme.of(context).extension<AppThemeExtension>()!;
+    final primary = Theme.of(context).primaryColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -24,15 +26,33 @@ class TaskTile extends StatelessWidget {
         children: [
           Expanded(
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: onEdit,
-              child: Text(
-                task.title,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: task.isCompleted ? themeExtension.textTertiary : null,
-                  decoration: task.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
-                  fontWeight: FontWeight.w400,
-                ),
+              child: Row(
+                children: [
+                  if (task.category != TaskCategory.none) ...[
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: task.category.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: task.isCompleted ? ext.textTertiary : ext.textPrimary,
+                        decoration: task.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -45,14 +65,10 @@ class TaskTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: task.isCompleted
-                      ? Theme.of(context).primaryColor
-                      : themeExtension.border,
+                  color: task.isCompleted ? primary : ext.border,
                   width: 2,
                 ),
-                color: task.isCompleted
-                    ? Theme.of(context).primaryColor
-                    : themeExtension.background,
+                color: task.isCompleted ? primary : ext.background,
               ),
               child: task.isCompleted
                   ? const Icon(Icons.check, color: Colors.white, size: 14)

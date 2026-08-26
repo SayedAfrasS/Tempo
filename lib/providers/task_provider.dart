@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/task.dart';
+import '../models/task_category.dart';
 import '../core/utils/date_utils.dart';
 
 class TaskProvider with ChangeNotifier {
@@ -75,12 +76,13 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateTask(String taskId, {String? title, DateTime? date}) {
+  void updateTask(String taskId, {String? title, DateTime? date, TaskCategory? category}) {
     final index = _tasks.indexWhere((task) => task.id == taskId);
     if (index != -1) {
       _tasks[index] = _tasks[index].copyWith(
         title: title ?? _tasks[index].title,
         date: date ?? _tasks[index].date,
+        category: category ?? _tasks[index].category,
       );
       _saveTasks();
       notifyListeners();

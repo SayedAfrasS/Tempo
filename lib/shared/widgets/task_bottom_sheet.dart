@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/task.dart';
+import '../../models/task_category.dart';
 import '../../providers/task_provider.dart';
 
 class TaskBottomSheet extends StatefulWidget {
@@ -24,11 +25,13 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   late DateTime _selectedDate;
+  late TaskCategory _category;
 
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.initialDate;
+    _category = widget.task?.category ?? TaskCategory.none;
 
     if (widget.task != null) {
       _titleController.text = widget.task!.title;
@@ -75,6 +78,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           widget.task!.id,
           title: _titleController.text.trim(),
           date: _selectedDate,
+          category: _category,
         );
       } else {
         taskProvider.addTask(Task(
@@ -82,6 +86,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           title: _titleController.text.trim(),
           isCompleted: false,
           date: _selectedDate,
+          category: _category,
         ));
       }
 
@@ -152,6 +157,41 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                     Icon(Icons.chevron_right, color: ext.textSecondary, size: 20),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Text('Category', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ext.textPrimary)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: TaskCategory.values.map((c) {
+                  final selected = _category == c;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _category = c),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: selected ? c.color : ext.surface,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          c.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: selected ? Colors.white : ext.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
             const SizedBox(height: 32),
