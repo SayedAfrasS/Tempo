@@ -153,7 +153,7 @@ class _WeekPlannerScreenState extends State<WeekPlannerScreen> {
               //    The user scrolls UP to see them.
               SliverList(
                 delegate: SliverChildListDelegate(
-                  pastDays.map((d) => _buildDaySection(d, taskProvider)).toList(),
+                  pastDays.reversed.map((d) => _buildDaySection(d, taskProvider)).toList(),
                 ),
               ),
 
