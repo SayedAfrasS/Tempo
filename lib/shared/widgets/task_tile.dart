@@ -19,44 +19,53 @@ class TaskTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppThemeExtension>()!;
     final primary = Theme.of(context).primaryColor;
+    final hasCategory = task.category != TaskCategory.none;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Expanded(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onEdit,
-              child: Row(
-                children: [
-                  if (task.category != TaskCategory.none) ...[
-                    Container(
-                      width: 8,
-                      height: 8,
+              child: hasCategory
+                  // 🎯 COLORED BOX for categorized tasks
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: task.category.color,
-                        shape: BoxShape.circle,
+                        color: task.category.color
+                            .withOpacity(task.isCompleted ? 0.10 : 0.22),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Text(
+                      child: Text(
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: task.isCompleted ? ext.textTertiary : ext.textPrimary,
+                          decoration: task.isCompleted
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                      ),
+                    )
+                  // Plain minimal text for "None" category
+                  : Text(
                       task.title,
                       style: TextStyle(
                         fontSize: 16,
                         color: task.isCompleted ? ext.textTertiary : ext.textPrimary,
-                        decoration: task.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           GestureDetector(
             onTap: onToggle,
             child: Container(
