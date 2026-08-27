@@ -1,5 +1,6 @@
 import 'task_category.dart';
 import 'task_repeat.dart';
+import 'subtask.dart';
 
 class Task {
   final String id;
@@ -9,6 +10,7 @@ class Task {
   final TaskCategory category;
   final TaskRepeat repeat;
   final List<String> completedDates;
+  final List<Subtask> subtasks;
 
   Task({
     required this.id,
@@ -18,7 +20,9 @@ class Task {
     this.category = TaskCategory.none,
     this.repeat = TaskRepeat.none,
     List<String>? completedDates,
-  }) : completedDates = completedDates ?? [];
+    List<Subtask>? subtasks,
+  })  : completedDates = completedDates ?? [],
+        subtasks = subtasks ?? [];
 
   Map<String, dynamic> toJson() {
     return {
@@ -29,6 +33,7 @@ class Task {
       'category': category.index,
       'repeat': repeat.index,
       'completedDates': completedDates,
+      'subtasks': subtasks.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -47,6 +52,9 @@ class Task {
       completedDates: (json['completedDates'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
+      subtasks: (json['subtasks'] as List<dynamic>? ?? [])
+          .map((e) => Subtask.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
     );
   }
 
@@ -58,6 +66,7 @@ class Task {
     TaskCategory? category,
     TaskRepeat? repeat,
     List<String>? completedDates,
+    List<Subtask>? subtasks,
   }) {
     return Task(
       id: id ?? this.id,
@@ -67,6 +76,7 @@ class Task {
       category: category ?? this.category,
       repeat: repeat ?? this.repeat,
       completedDates: completedDates ?? this.completedDates,
+      subtasks: subtasks ?? this.subtasks,
     );
   }
 }
