@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/task.dart';
+import '../models/subtask.dart';
 import '../models/task_category.dart';
 import '../models/task_repeat.dart';
 import '../core/utils/date_utils.dart';
@@ -120,6 +121,44 @@ class TaskProvider with ChangeNotifier {
 
   void deleteTask(String taskId) {
     _tasks.removeWhere((t) => t.id == taskId);
+    _saveTasks();
+    notifyListeners();
+  }
+
+  // ---------- 🎯 SUBTASKS ----------
+  void addSubtask(String taskId, String title) {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1 || title.trim().isEmpty) return;
+    final task = _tasks[index];
+    final list = List<Subtask>.from(task.subtasks);
+    list.add(Subtask(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title.trim(),
+    ));
+    _tasks[index] = task.copyWith(subtasks: list);
+    _saveTasks();
+    notifyListeners();
+  }
+
+  void toggleSubtask(String taskId, String subtaskId) {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1) return;
+    final task = _tasks[index];
+    final list = task.subtasks
+        .map((s) => s.id == subtaskId ? s.copyWith(isCompleted: !s.isCompleted) : s)
+        .toList();
+    _tasks[index] = task.copyWith(subtasks: list);
+    _saveTasks();
+    notifyListeners();
+  }
+
+  void deleteSubtask(String taskId, String subtaskId) {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1) return;
+    final task = _tasks[index];
+    final list = List<Subtask>.from(task.subtasks)
+      ..removeWhere((s) => s.id == subtaskId);
+    _tasks[index] = task.copyWith(subtasks: list);
     _saveTasks();
     notifyListeners();
   }
