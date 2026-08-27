@@ -67,23 +67,24 @@ class _WeekPlannerScreenState extends State<WeekPlannerScreen> {
     );
   }
 
-  Widget _buildDaySection(DateTime date, TaskProvider taskProvider) {
-    final tasks = taskProvider.getTasksForDate(date);
-    final isToday = _isSameDay(date, DateTime.now());
+    Widget _buildDaySection(DateTime date, TaskProvider taskProvider) {
+      final tasks = taskProvider.getTasksForDate(date);
+      final isToday = _isSameDay(date, DateTime.now());
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: DaySection(
-        date: date,
-        tasks: tasks,
-        isToday: isToday,
-        onToggleTask: (taskId) => taskProvider.toggleTask(taskId),
-        onDeleteTask: (taskId) => taskProvider.deleteTask(taskId),
-        onEditTask: (task) => _openSheet(task: task, date: date),
-        onAddTask: () => _openSheet(date: date),
-      ),
-    );
-  }
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: DaySection(
+          date: date,
+          tasks: tasks,
+          isToday: isToday,
+          isTaskCompleted: (task) => taskProvider.isCompletedOn(task, date),
+          onToggleTask: (taskId) => taskProvider.toggleTaskOn(taskId, date),
+          onDeleteTask: (taskId) => taskProvider.deleteTask(taskId),
+          onEditTask: (task) => _openSheet(task: task, date: date),
+          onAddTask: () => _openSheet(date: date),
+        ),
+      );
+    }
 
   @override
   Widget build(BuildContext context) {

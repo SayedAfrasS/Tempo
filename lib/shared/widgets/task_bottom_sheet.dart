@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/task.dart';
 import '../../models/task_category.dart';
+import '../../models/task_repeat.dart';
 import '../../providers/task_provider.dart';
 
 class TaskBottomSheet extends StatefulWidget {
@@ -26,12 +27,14 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   final _titleController = TextEditingController();
   late DateTime _selectedDate;
   late TaskCategory _category;
+  late TaskRepeat _repeat;
 
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.initialDate;
     _category = widget.task?.category ?? TaskCategory.none;
+    _repeat = widget.task?.repeat ?? TaskRepeat.none;
 
     if (widget.task != null) {
       _titleController.text = widget.task!.title;
@@ -79,6 +82,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           title: _titleController.text.trim(),
           date: _selectedDate,
           category: _category,
+          repeat: _repeat,
         );
       } else {
         taskProvider.addTask(Task(
@@ -87,6 +91,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           isCompleted: false,
           date: _selectedDate,
           category: _category,
+          repeat: _repeat,
         ));
       }
 
@@ -187,6 +192,50 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                             fontWeight: FontWeight.w600,
                             color: selected ? Colors.white : ext.textSecondary,
                           ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Text('Repeats', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ext.textPrimary)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: TaskRepeat.values.map((r) {
+                  final selected = _repeat == r;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _repeat = r),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: selected ? primary : ext.surface,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          children: [
+                            if (r != TaskRepeat.none)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 6),
+                                child: Icon(LucideIcons.repeat, size: 13, color: Colors.white),
+                              ),
+                            Text(
+                              r.label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: selected ? Colors.white : ext.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

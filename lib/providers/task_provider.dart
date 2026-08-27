@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/task.dart';
 import '../models/task_category.dart';
+import '../models/task_repeat.dart';
 import '../core/utils/date_utils.dart';
 
 class TaskProvider with ChangeNotifier {
@@ -33,25 +34,40 @@ class TaskProvider with ChangeNotifier {
     await prefs.setString('weekflow_tasks', tasksString);
   }
 
-  List<Task> getTodayTasks() {
-    return _tasks.where((task) => AppDateUtils.isToday(task.date)).toList();
+  // ---------- Recurrence logic ----------
+  String _dateKey(DateTime d) => '${d.year}-${d.month}-${d.day}';
+
+  bool occursOn(Task task, DateTime date) {
+    final start = DateTime(task.date.year, task.date.month, task.date.day);
+    final day = DateTime(date.year, date.month, date.day);
+    if (day.isBefore(start)) return false;
+    switch (task.repeat) {
+      case TaskRepeat.none:
+        return start == day;
+      case TaskRepeat.daily:
+        return true;
+      case TaskRepeat.weekly:
+        return day.weekday == start.weekday;
+    }
   }
 
-  List<Task> getTasksForDate(DateTime date) {
-    return _tasks.where((task) =>
-      task.date.year == date.year &&
-      task.date.month == date.month &&
-      task.date.day == date.day
-    ).toList();
+  bool isCompletedOn(Task task, DateTime date) {
+    if (task.repeat == TaskRepeat.none) return task.isCompleted;
+    return task.completedDates.contains(_dateKey(date));
   }
+
+  // ---------- Queries ----------
+  List<Task> getTodayTasks() => getTasksForDate(DateTime.now());
+
+  List<Task> getTasksForDate(DateTime date) =>
+      _tasks.where((t) => occursOn(t, date)).toList();
 
   int getTodayCompletedCount() {
-    return getTodayTasks().where((task) => task.isCompleted).length;
+    final now = DateTime.now();
+    return getTasksForDate(now).where((t) => isCompletedOn(t, now)).length;
   }
 
-  int getTodayTotalCount() {
-    return getTodayTasks().length;
-  }
+  int getTodayTotalCount() => getTodayTasks().length;
 
   double getTodayCompletionPercentage() {
     final total = getTodayTotalCount();
@@ -59,15 +75,26 @@ class TaskProvider with ChangeNotifier {
     return getTodayCompletedCount() / total;
   }
 
-  void toggleTask(String taskId) {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
-    if (index != -1) {
-      _tasks[index] = _tasks[index].copyWith(
-        isCompleted: !_tasks[index].isCompleted,
-      );
-      _saveTasks();
-      notifyListeners();
+  // ---------- Mutations ----------
+  void toggleTaskOn(String taskId, DateTime date) {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1) return;
+    final task = _tasks[index];
+
+    if (task.repeat == TaskRepeat.none) {
+      _tasks[index] = task.copyWith(isCompleted: !task.isCompleted);
+    } else {
+      final key = _dateKey(date);
+      final list = List<String>.from(task.completedDates);
+      if (list.contains(key)) {
+        list.remove(key);
+      } else {
+        list.add(key);
+      }
+      _tasks[index] = task.copyWith(completedDates: list);
     }
+    _saveTasks();
+    notifyListeners();
   }
 
   void addTask(Task task) {
@@ -76,13 +103,15 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateTask(String taskId, {String? title, DateTime? date, TaskCategory? category}) {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
+  void updateTask(String taskId,
+      {String? title, DateTime? date, TaskCategory? category, TaskRepeat? repeat}) {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       _tasks[index] = _tasks[index].copyWith(
         title: title ?? _tasks[index].title,
         date: date ?? _tasks[index].date,
         category: category ?? _tasks[index].category,
+        repeat: repeat ?? _tasks[index].repeat,
       );
       _saveTasks();
       notifyListeners();
@@ -90,7 +119,7 @@ class TaskProvider with ChangeNotifier {
   }
 
   void deleteTask(String taskId) {
-    _tasks.removeWhere((task) => task.id == taskId);
+    _tasks.removeWhere((t) => t.id == taskId);
     _saveTasks();
     notifyListeners();
   }

@@ -187,7 +187,8 @@ class _MonthViewScreenState extends State<MonthViewScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            ...tasks.take(3).map((t) => _chip(ext, t)),
+            // ✅ EDIT 1: pass provider + date into the chip
+            ...tasks.take(3).map((t) => _chip(ext, t, provider, date)),
             if (tasks.length > 3)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
@@ -202,7 +203,10 @@ class _MonthViewScreenState extends State<MonthViewScreen> {
     );
   }
 
-  Widget _chip(AppThemeExtension ext, Task task) {
+  // ✅ EDIT 2: chip now uses per-date completion for recurring tasks
+  Widget _chip(
+      AppThemeExtension ext, Task task, TaskProvider provider, DateTime date) {
+    final completed = provider.isCompletedOn(task, date);
     final Color bg = task.category == TaskCategory.none
         ? ext.surface
         : task.category.color.withOpacity(0.25);
@@ -220,9 +224,8 @@ class _MonthViewScreenState extends State<MonthViewScreen> {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 9,
-          color: task.isCompleted ? ext.textTertiary : ext.textPrimary,
-          decoration:
-              task.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+          color: completed ? ext.textTertiary : ext.textPrimary,
+          decoration: completed ? TextDecoration.lineThrough : TextDecoration.none,
         ),
       ),
     );
@@ -292,9 +295,11 @@ class _DaySheet extends StatelessWidget {
                     ),
                   )
                 else
+                  // ✅ EDIT 3: per-date completion + toggle for recurring tasks
                   ...tasks.map((task) => TaskTile(
                         task: task,
-                        onToggle: () => provider.toggleTask(task.id),
+                        completed: provider.isCompletedOn(task, date),
+                        onToggle: () => provider.toggleTaskOn(task.id, date),
                         onEdit: () {
                           showModalBottomSheet(
                             context: context,

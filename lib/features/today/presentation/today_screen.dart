@@ -169,20 +169,21 @@ class _TodayScreenState extends State<TodayScreen> {
           onDismissed: (direction) {
             taskProvider.deleteTask(task.id);
           },
-          child: TaskTile(
-            task: task,
-            onToggle: () => taskProvider.toggleTask(task.id),
-            onEdit: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) {
-                  return TaskBottomSheet(task: task, initialDate: task.date);
-                },
-              );
-            },
-          ),
+                    child: TaskTile(
+                      task: task,
+                      completed: taskProvider.isCompletedOn(task, DateTime.now()),
+                      onToggle: () => taskProvider.toggleTaskOn(task.id, DateTime.now()),
+                      onEdit: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) {
+                            return TaskBottomSheet(task: task, initialDate: task.date);
+                          },
+                        );
+                      },
+                    ),
         );
       }).toList(),
     );

@@ -8,6 +8,7 @@ class DaySection extends StatelessWidget {
   final DateTime date;
   final List<Task> tasks;
   final bool isToday;
+  final bool Function(Task) isTaskCompleted;
   final Function(String) onToggleTask;
   final Function(String) onDeleteTask;
   final Function(Task) onEditTask;
@@ -18,6 +19,7 @@ class DaySection extends StatelessWidget {
     required this.date,
     required this.tasks,
     this.isToday = false,
+    required this.isTaskCompleted,
     required this.onToggleTask,
     required this.onDeleteTask,
     required this.onEditTask,
@@ -86,6 +88,7 @@ class DaySection extends StatelessWidget {
                 onDismissed: (direction) => onDeleteTask(task.id),
                 child: TaskTile(
                   task: task,
+                  completed: isTaskCompleted(task),
                   onToggle: () => onToggleTask(task.id),
                   onEdit: () => onEditTask(task),
                 ),
