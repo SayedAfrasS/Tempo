@@ -6,6 +6,8 @@ import '../models/subtask.dart';
 import '../models/task_category.dart';
 import '../models/task_repeat.dart';
 import '../core/utils/date_utils.dart';
+import '../core/services/notification_service.dart';
+import 'settings_provider.dart';
 
 class TaskProvider with ChangeNotifier {
   List<Task> _tasks = [];
@@ -15,6 +17,7 @@ class TaskProvider with ChangeNotifier {
   List<Task> get tasks => _tasks;
 
   TaskProvider() {
+    SettingsProvider.tasksProvider = () => _tasks;
     _loadTasks();
   }
 
@@ -25,6 +28,7 @@ class TaskProvider with ChangeNotifier {
       final List<dynamic> tasksJson = jsonDecode(tasksString);
       _tasks = tasksJson.map((json) => Task.fromJson(json)).toList();
     }
+    await NotificationService.instance.scheduleAll(_tasks);
     _isLoaded = true;
     notifyListeners();
   }
@@ -35,7 +39,6 @@ class TaskProvider with ChangeNotifier {
     await prefs.setString('weekflow_tasks', tasksString);
   }
 
-  // ---------- Recurrence logic ----------
   String _dateKey(DateTime d) => '${d.year}-${d.month}-${d.day}';
 
   bool occursOn(Task task, DateTime date) {
@@ -57,7 +60,6 @@ class TaskProvider with ChangeNotifier {
     return task.completedDates.contains(_dateKey(date));
   }
 
-  // ---------- Queries ----------
   List<Task> getTodayTasks() => getTasksForDate(DateTime.now());
 
   List<Task> getTasksForDate(DateTime date) =>
@@ -76,7 +78,6 @@ class TaskProvider with ChangeNotifier {
     return getTodayCompletedCount() / total;
   }
 
-  // ---------- Mutations ----------
   void toggleTaskOn(String taskId, DateTime date) {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index == -1) return;
@@ -84,6 +85,7 @@ class TaskProvider with ChangeNotifier {
 
     if (task.repeat == TaskRepeat.none) {
       _tasks[index] = task.copyWith(isCompleted: !task.isCompleted);
+      NotificationService.instance.scheduleForTask(_tasks[index]);
     } else {
       final key = _dateKey(date);
       final list = List<String>.from(task.completedDates);
@@ -100,6 +102,7 @@ class TaskProvider with ChangeNotifier {
 
   void addTask(Task task) {
     _tasks.add(task);
+    NotificationService.instance.scheduleForTask(task);
     _saveTasks();
     notifyListeners();
   }
@@ -114,18 +117,20 @@ class TaskProvider with ChangeNotifier {
         category: category ?? _tasks[index].category,
         repeat: repeat ?? _tasks[index].repeat,
       );
+      NotificationService.instance.scheduleForTask(_tasks[index]);
       _saveTasks();
       notifyListeners();
     }
   }
 
   void deleteTask(String taskId) {
+    final task = _tasks.firstWhere((t) => t.id == taskId);
+    NotificationService.instance.cancelForTask(task);
     _tasks.removeWhere((t) => t.id == taskId);
     _saveTasks();
     notifyListeners();
   }
 
-  // ---------- 🎯 SUBTASKS ----------
   void addSubtask(String taskId, String title) {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index == -1 || title.trim().isEmpty) return;
@@ -156,8 +161,7 @@ class TaskProvider with ChangeNotifier {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index == -1) return;
     final task = _tasks[index];
-    final list = List<Subtask>.from(task.subtasks)
-      ..removeWhere((s) => s.id == subtaskId);
+    final list = List<Subtask>.from(task.subtasks)..removeWhere((s) => s.id == subtaskId);
     _tasks[index] = task.copyWith(subtasks: list);
     _saveTasks();
     notifyListeners();
