@@ -1,9 +1,9 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:intl/intl.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import '../../models/task.dart';
-import '../../models/task_repeat.dart';
 
 class NotificationService {
   NotificationService._();
@@ -12,13 +12,11 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
 
   bool _enabled = true;
-  int _cycleHours = 2;
   bool _initialized = false;
 
-  void configure({required bool enabled, required int cycleHours}) {
+  void configure({required bool enabled}) {
     final wasEnabled = _enabled;
     _enabled = enabled;
-    _cycleHours = cycleHours;
     if (!enabled && wasEnabled) cancelAll();
   }
 
@@ -29,6 +27,7 @@ class NotificationService {
     try {
       final TimezoneInfo tzInfo = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
+      print('🌍 Timezone: ${tzInfo.identifier}');
     } catch (_) {
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
@@ -43,12 +42,15 @@ class NotificationService {
 
     final AndroidFlutterLocalNotificationsPlugin? android = _plugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    await android?.requestNotificationsPermission();
-    try {
-      await android?.requestExactAlarmsPermission();
-    } catch (_) {}
+
+    final bool? notificationsAllowed = await android?.areNotificationsEnabled();
+    print('🔔 Notifications allowed: $notificationsAllowed');
+    if (notificationsAllowed == false) {
+      await android?.requestNotificationsPermission();
+    }
 
     _initialized = true;
+    print('✅ NotificationService ready');
   }
 
   int _baseId(Task task) {
@@ -57,11 +59,32 @@ class NotificationService {
     return int.tryParse(digits) ?? digits.hashCode.abs() % 1000000;
   }
 
-  int _idFor(Task task, int dayOffset, int slot) =>
-      _baseId(task) * 100 + dayOffset * 10 + slot;
+  DateTime? _reminderTime(Task task) {
+    if (task.time == null || task.time!.isEmpty) return null;
+    try {
+      final DateTime parsed = DateFormat('h:mm a', 'en_US').parse(task.time!);
+      return DateTime(task.date.year, task.date.month, task.date.day,
+          parsed.hour, parsed.minute);
+    } catch (e) {
+      print('❌ Time parse error: $e');
+      return null;
+    }
+  }
 
   Future<void> scheduleForTask(Task task) async {
+    print('🔔 scheduleForTask called for: ${task.title}');
+
     if (!_initialized || !_enabled || task.isCompleted) {
+      print('⛔ Skipped (disabled/completed)');
+      await cancelForTask(task);
+      return;
+    }
+
+    final DateTime? when = _reminderTime(task);
+    print('⏰ Calculated time: $when');
+
+    if (when == null) {
+      print('⛔ Skipped (no time set)');
       await cancelForTask(task);
       return;
     }
@@ -69,69 +92,39 @@ class NotificationService {
     await cancelForTask(task);
 
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final start = DateTime(task.date.year, task.date.month, task.date.day);
-
-    // Which days need reminders? (7-day horizon for recurring tasks)
-    final List<DateTime> days = [];
-    if (task.repeat == TaskRepeat.none) {
-      if (!start.isBefore(today)) days.add(start);
-    } else {
-      for (int d = 0; d < 7; d++) {
-        final day = today.add(Duration(days: d));
-        if (day.isBefore(start)) continue;
-        if (task.repeat == TaskRepeat.weekly && day.weekday != start.weekday) continue;
-        days.add(day);
-      }
+    print('⏳ Comparing $when vs $now');
+    if (!when.isAfter(now)) {
+        print('⛔ Skipped (time is in the past)');
+        return;
     }
 
-    bool scheduledAny = false;
-    for (final day in days) {
-      final dayOffset = day.difference(today).inDays;
-      DateTime slot = DateTime(day.year, day.month, day.day, 9, 0);
-      final end = DateTime(day.year, day.month, day.day, 22, 0);
-
-      for (int i = 0; i < 4; i++) {
-        if (slot.isAfter(end)) break;
-        if (slot.isAfter(now)) {
-          await _scheduleAt(task, dayOffset, i, slot);
-          scheduledAny = true;
-        }
-        slot = slot.add(Duration(hours: _cycleHours));
-      }
-    }
-
-    // Overdue nudge: one-time task due today, all times passed
-    if (!scheduledAny && task.repeat == TaskRepeat.none && start == today) {
-      await _scheduleAt(task, 0, 0, now.add(const Duration(minutes: 1)));
-    }
+    print('✅ CALLING zonedSchedule for ID ${_baseId(task)} at $when');
+    await _scheduleAt(_baseId(task), task.title, when);
   }
 
-  Future<void> _scheduleAt(Task task, int dayOffset, int slot, DateTime when) async {
+  Future<void> _scheduleAt(int id, String title, DateTime when) async {
     await _plugin.zonedSchedule(
-      id: _idFor(task, dayOffset, slot),
-      title: task.title,
+      id: id,
+      title: title,
       body: 'Time to work on this task ✅',
       scheduledDate: tz.TZDateTime.from(when, tz.local),
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
-          'tempo_tasks',
+          'tempo_reminders_final_v7',
           'Task reminders',
           channelDescription: 'Reminders for your tasks',
-          importance: Importance.high,
+          importance: Importance.max,
           priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 
   Future<void> cancelForTask(Task task) async {
-    for (int d = 0; d < 7; d++) {
-      for (int i = 0; i < 4; i++) {
-        await _plugin.cancel(id: _idFor(task, d, i));
-      }
-    }
+    await _plugin.cancel(id: _baseId(task));
   }
 
   Future<void> scheduleAll(List<Task> tasks) async {
@@ -143,5 +136,26 @@ class NotificationService {
 
   Future<void> cancelAll() async {
     await _plugin.cancelAll();
+  }
+
+  Future<void> testScheduledReminder() async {
+    if (!_initialized) await init();
+    print('🧪 Showing immediate test notification...');
+    await _plugin.show(
+      id: 99999,
+      title: 'Tempo Reminder Test ⏰',
+      body: 'If you see this instantly, the notification engine works!',
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'tempo_test_final_v7',
+          'Test reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+      ),
+    );
+    print('✅ Immediate notification sent');
   }
 }
