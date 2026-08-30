@@ -49,6 +49,7 @@ class _TaskTileState extends State<TaskTile> {
     final primary = Theme.of(context).primaryColor;
     final hasCategory = widget.task.category != TaskCategory.none;
     final isRecurring = widget.task.repeat != TaskRepeat.none;
+    final hasTime = widget.task.time != null && widget.task.time!.isNotEmpty;
     final completed = widget.completed;
     final subtasks = widget.task.subtasks;
     final doneCount = subtasks.where((s) => s.isCompleted).length;
@@ -58,7 +59,6 @@ class _TaskTileState extends State<TaskTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------- Main row: title + checkbox ----------
           Row(
             children: [
               Expanded(
@@ -68,8 +68,7 @@ class _TaskTileState extends State<TaskTile> {
                   child: hasCategory
                       ? Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
                             color: widget.task.category.color
                                 .withOpacity(completed ? 0.10 : 0.22),
@@ -83,9 +82,7 @@ class _TaskTileState extends State<TaskTile> {
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
-                                    color: completed
-                                        ? ext.textTertiary
-                                        : ext.textPrimary,
+                                    color: completed ? ext.textTertiary : ext.textPrimary,
                                     decoration: completed
                                         ? TextDecoration.lineThrough
                                         : TextDecoration.none,
@@ -93,8 +90,15 @@ class _TaskTileState extends State<TaskTile> {
                                 ),
                               ),
                               if (isRecurring)
-                                Icon(LucideIcons.repeat,
-                                    size: 13, color: ext.textTertiary),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: Icon(LucideIcons.repeat, size: 13, color: ext.textTertiary),
+                                ),
+                              if (hasTime)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: Icon(LucideIcons.clock, size: 13, color: ext.textTertiary),
+                                ),
                             ],
                           ),
                         )
@@ -105,9 +109,7 @@ class _TaskTileState extends State<TaskTile> {
                                 widget.task.title,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: completed
-                                      ? ext.textTertiary
-                                      : ext.textPrimary,
+                                  color: completed ? ext.textTertiary : ext.textPrimary,
                                   decoration: completed
                                       ? TextDecoration.lineThrough
                                       : TextDecoration.none,
@@ -116,8 +118,15 @@ class _TaskTileState extends State<TaskTile> {
                               ),
                             ),
                             if (isRecurring)
-                              Icon(LucideIcons.repeat,
-                                  size: 13, color: ext.textTertiary),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(LucideIcons.repeat, size: 13, color: ext.textTertiary),
+                              ),
+                            if (hasTime)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(LucideIcons.clock, size: 13, color: ext.textTertiary),
+                              ),
                           ],
                         ),
                 ),
@@ -144,7 +153,6 @@ class _TaskTileState extends State<TaskTile> {
             ],
           ),
 
-          // ---------- Subtasks expander (ALWAYS visible) ----------
           const SizedBox(height: 6),
           GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
@@ -156,9 +164,7 @@ class _TaskTileState extends State<TaskTile> {
                   Icon(
                     _expanded
                         ? LucideIcons.chevronDown
-                        : (subtasks.isEmpty
-                            ? Icons.add
-                            : LucideIcons.chevronRight),
+                        : (subtasks.isEmpty ? Icons.add : LucideIcons.chevronRight),
                     size: 14,
                     color: ext.textTertiary,
                   ),
