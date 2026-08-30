@@ -32,9 +32,29 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(true)
                     } catch (e: Exception) {
-                        // Fallback if the direct intent is blocked by the phone manufacturer
                         try {
                             startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                            result.success(true)
+                        } catch (e2: Exception) {
+                            result.success(false)
+                        }
+                    }
+                } else if (call.method == "openExactAlarmSettings") {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Android 12+
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                            intent.data = Uri.parse("package:$packageName")
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.success(true)
+                        }
+                    } catch (e: Exception) {
+                        try {
+                            // Fallback to app info page
+                            startActivity(Intent("android.settings.APPLICATION_DETAILS_SETTINGS").apply {
+                                data = Uri.parse("package:$packageName")
+                            })
                             result.success(true)
                         } catch (e2: Exception) {
                             result.success(false)

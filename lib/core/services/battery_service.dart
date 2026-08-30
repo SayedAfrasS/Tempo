@@ -20,4 +20,13 @@ class BatteryService {
       print('🔴 Battery request error: $e');
     }
   }
+
+  static Future<void> openExactAlarmSettings() async {
+    try {
+      await _channel.invokeMethod('openExactAlarmSettings');
+      print('🟢 Exact alarm settings opened');
+    } catch (e) {
+      print('🔴 Exact alarm settings error: $e');
+    }
+  }
 }
