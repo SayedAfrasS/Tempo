@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/settings_provider.dart';
 
@@ -134,94 +136,178 @@ class ProfileSheet extends StatefulWidget {
 }
 
 class _ProfileSheetState extends State<ProfileSheet> {
-  final TextEditingController _nameController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _occupationController = TextEditingController();
+  DateTime? _birthDate;
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController.text =
-        Provider.of<SettingsProvider>(context, listen: false).userName;
+    final meta = Supabase.instance.client.auth.currentUser?.userMetadata ?? {};
+    _nameController.text = (meta['full_name'] as String? ?? '');
+    _occupationController.text = (meta['occupation'] as String? ?? '');
+    final dob = (meta['date_of_birth'] as String? ?? '');
+    if (dob.isNotEmpty) {
+      try {
+        _birthDate = DateTime.parse(dob);
+      } catch (_) {}
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _occupationController.dispose();
     super.dispose();
   }
 
-  void _save() {
-    context.read<SettingsProvider>().setUserName(_nameController.text.trim());
-    Navigator.pop(context);
+  Future<void> _pickBirthDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthDate ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) setState(() => _birthDate = picked);
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(data: {
+          'full_name': _nameController.text.trim(),
+          'date_of_birth': _birthDate == null
+              ? ''
+              : DateFormat('yyyy-MM-dd').format(_birthDate!),
+          'occupation': _occupationController.text.trim(),
+        }),
+      );
+      try {
+        await Supabase.instance.client.auth.refreshSession();
+      } catch (_) {}
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated ✅')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppThemeExtension>()!;
     final primary = Theme.of(context).primaryColor;
-    final settings = context.watch<SettingsProvider>();
-    final displayName = settings.userName.isEmpty ? 'Tempo User' : settings.userName;
+    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
+    final displayName = _nameController.text.trim();
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: ext.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40, height: 4,
-            margin: const EdgeInsets.only(bottom: 24),
-            decoration: BoxDecoration(color: ext.border, borderRadius: BorderRadius.circular(2)),
-          ),
-          CircleAvatar(
+    return _SheetScaffold(
+      title: 'Profile',
+      children: [
+        Center(
+          child: CircleAvatar(
             radius: 40,
             backgroundColor: primary,
             child: Text(
-              displayName[0].toUpperCase(),
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'T',
+              style: const TextStyle(
+                  fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(displayName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: ext.textPrimary)),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _nameController,
-            style: TextStyle(color: ext.textPrimary),
-            decoration: InputDecoration(
-              labelText: 'Your name',
-              hintText: 'Enter your name',
-              filled: true,
-              fillColor: ext.surface,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            ),
+        ),
+        const SizedBox(height: 12),
+        Center(
+          child: Text(email, style: TextStyle(fontSize: 13, color: ext.textTertiary)),
+        ),
+        const SizedBox(height: 20),
+
+        TextField(
+          controller: _nameController,
+          style: TextStyle(color: ext.textPrimary),
+          decoration: InputDecoration(
+            labelText: 'Full name',
+            filled: true,
+            fillColor: ext.surface,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ext.surface,
-                    foregroundColor: ext.textPrimary,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 12),
+
+        GestureDetector(
+          onTap: _pickBirthDate,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration:
+                BoxDecoration(color: ext.surface, borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              children: [
+                Icon(Icons.cake_outlined, color: ext.textTertiary, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  _birthDate == null
+                      ? 'Date of birth'
+                      : DateFormat('dd MMM yyyy').format(_birthDate!),
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: _birthDate == null ? ext.textTertiary : ext.textPrimary,
                   ),
-                  child: const Text('Cancel'),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _save,
-                  child: const Text('Save'),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+
+        TextField(
+          controller: _occupationController,
+          style: TextStyle(color: ext.textPrimary),
+          decoration: InputDecoration(
+            labelText: 'Occupation',
+            filled: true,
+            fillColor: ext.surface,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _saving ? null : _save,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+            child: _saving
+                ? const SizedBox(
+                    width: 20, height: 20,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2),
+                  )
+                : const Text('Save Profile',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -266,7 +352,7 @@ class AboutWeekFlowSheet extends StatelessWidget {
         const SizedBox(height: 10),
         _AboutRow(icon: Icons.palette, text: 'Designed with the 60-30-10 color rule'),
         const SizedBox(height: 10),
-        _AboutRow(icon: Icons.lock, text: 'Your data stays safely on your device'),
+        _AboutRow(icon: Icons.lock, text: 'Your data stays safely in your cloud account'),
       ],
     );
   }
