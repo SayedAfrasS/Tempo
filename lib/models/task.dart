@@ -3,10 +3,13 @@ import 'task_repeat.dart';
 import 'subtask.dart';
 
 class Task {
+  static const String noTime = '\u0000NO_TIME\u0000';
+
   final String id;
   final String title;
   final bool isCompleted;
   final DateTime date;
+  final String? time;
   final TaskCategory category;
   final TaskRepeat repeat;
   final List<String> completedDates;
@@ -17,6 +20,7 @@ class Task {
     required this.title,
     this.isCompleted = false,
     required this.date,
+    this.time,
     this.category = TaskCategory.none,
     this.repeat = TaskRepeat.none,
     List<String>? completedDates,
@@ -30,6 +34,7 @@ class Task {
       'title': title,
       'isCompleted': isCompleted,
       'date': date.toIso8601String(),
+      'time': time,
       'category': category.index,
       'repeat': repeat.index,
       'completedDates': completedDates,
@@ -45,6 +50,7 @@ class Task {
       title: json['title'],
       isCompleted: json['isCompleted'] ?? false,
       date: DateTime.parse(json['date']),
+      time: json['time'] as String?,
       category: TaskCategory.values[
           catIndex >= 0 && catIndex < TaskCategory.values.length ? catIndex : 0],
       repeat: TaskRepeat.values[
@@ -63,6 +69,7 @@ class Task {
     String? title,
     bool? isCompleted,
     DateTime? date,
+    String? time = noTime,
     TaskCategory? category,
     TaskRepeat? repeat,
     List<String>? completedDates,
@@ -73,6 +80,7 @@ class Task {
       title: title ?? this.title,
       isCompleted: isCompleted ?? this.isCompleted,
       date: date ?? this.date,
+      time: time == noTime ? this.time : time,
       category: category ?? this.category,
       repeat: repeat ?? this.repeat,
       completedDates: completedDates ?? this.completedDates,
