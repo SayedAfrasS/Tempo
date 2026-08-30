@@ -108,7 +108,11 @@ class TaskProvider with ChangeNotifier {
   }
 
   void updateTask(String taskId,
-      {String? title, DateTime? date, TaskCategory? category, TaskRepeat? repeat}) {
+      {String? title,
+      DateTime? date,
+      TaskCategory? category,
+      TaskRepeat? repeat,
+      String? time = Task.noTime}) {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       _tasks[index] = _tasks[index].copyWith(
@@ -116,6 +120,7 @@ class TaskProvider with ChangeNotifier {
         date: date ?? _tasks[index].date,
         category: category ?? _tasks[index].category,
         repeat: repeat ?? _tasks[index].repeat,
+        time: time,
       );
       NotificationService.instance.scheduleForTask(_tasks[index]);
       _saveTasks();
