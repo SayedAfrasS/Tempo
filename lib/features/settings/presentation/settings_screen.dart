@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/battery_service.dart';
 import '../../../core/services/notification_service.dart';
@@ -28,10 +29,14 @@ class SettingsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
+          final supaName = ((Supabase.instance.client.auth.currentUser
+                      ?.userMetadata?['full_name'] as String? ??
+                  '')
+              .trim());
+
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
-              // APPEARANCE
               const SettingsSectionHeader(title: 'APPEARANCE'),
               SettingsTile(
                 title: 'Theme',
@@ -39,7 +44,6 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => _showSheet(context, const ThemePickerBottomSheet()),
               ),
 
-              // PLANNER
               const SettingsSectionHeader(title: 'PLANNER'),
               SettingsTile(
                 title: 'Week starts on',
@@ -50,7 +54,6 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => _showSheet(context, const WeekStartPickerSheet()),
               ),
 
-              // NOTIFICATIONS
               const SettingsSectionHeader(title: 'NOTIFICATIONS'),
               SettingsTile(
                 title: 'Task reminders',
@@ -62,32 +65,50 @@ class SettingsScreen extends StatelessWidget {
               if (settings.taskReminders) ...[
                 const _BatteryTile(),
                 SettingsTile(
+                  title: 'Allow Exact Alarms',
+                  trailing: const Icon(Icons.alarm, color: Colors.blue),
+                  onTap: () async {
+                    await BatteryService.openExactAlarmSettings();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Turn ON the switch for Tempo/WeekFlow, then come back!'),
+                        duration: Duration(seconds: 4),
+                      ),
+                    );
+                  },
+                ),
+                SettingsTile(
                   title: 'Test Reminder (15s)',
                   trailing: const Icon(Icons.timer, color: Colors.orange),
                   onTap: () async {
                     await NotificationService.instance.testScheduledReminder();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content:
-                            Text('Alarm set! Close the app and wait 15 seconds...'),
+                        content: Text('Alarm set! Wait 15 seconds...'),
                       ),
                     );
                   },
                 ),
               ],
 
-              // ACCOUNT
               const SettingsSectionHeader(title: 'ACCOUNT'),
               SettingsTile(
                 title: 'Profile',
                 trailing: _trailingText(
                   context,
-                  settings.userName.isEmpty ? 'Set name' : settings.userName,
+                  supaName.isEmpty ? 'View' : supaName,
                 ),
                 onTap: () => _showSheet(context, const ProfileSheet()),
               ),
+              SettingsTile(
+                title: 'Sign out',
+                trailing: const Icon(Icons.logout, color: Color(0xFFEF4444)),
+                onTap: () async {
+                  await Supabase.instance.client.auth.signOut();
+                },
+              ),
 
-              // ABOUT
               const SettingsSectionHeader(title: 'ABOUT'),
               SettingsTile(
                 title: 'About Tempo',
@@ -107,7 +128,13 @@ class SettingsScreen extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(text, style: TextStyle(color: ext.textTertiary)),
+        Flexible(
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: ext.textTertiary),
+          ),
+        ),
         const SizedBox(width: 8),
         Icon(Icons.chevron_right, color: ext.textTertiary),
       ],
@@ -124,7 +151,6 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-// ---------- Battery Boost tile ----------
 class _BatteryTile extends StatefulWidget {
   const _BatteryTile();
 
