@@ -26,6 +26,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   late DateTime _selectedDate;
+  String _selectedTime = '';
   late TaskCategory _category;
   late TaskRepeat _repeat;
 
@@ -39,6 +40,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
     if (widget.task != null) {
       _titleController.text = widget.task!.title;
       _selectedDate = widget.task!.date;
+      _selectedTime = widget.task!.time ?? '';
     }
   }
 
@@ -72,9 +74,34 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
     }
   }
 
+  Future<void> _selectTime(BuildContext context) async {
+    final primary = Theme.of(context).primaryColor;
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(primary: primary),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final now = DateTime.now();
+      final dt = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+      setState(() {
+        _selectedTime = DateFormat('h:mm a', 'en_US').format(dt);
+      });
+    }
+  }
+
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
       final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+      final String? timeValue = _selectedTime.isEmpty ? null : _selectedTime;
 
       if (widget.task != null) {
         taskProvider.updateTask(
@@ -83,6 +110,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           date: _selectedDate,
           category: _category,
           repeat: _repeat,
+          time: timeValue,
         );
       } else {
         taskProvider.addTask(Task(
@@ -90,6 +118,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           title: _titleController.text.trim(),
           isCompleted: false,
           date: _selectedDate,
+          time: timeValue,
           category: _category,
           repeat: _repeat,
         ));
@@ -160,6 +189,42 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
                     Text(DateFormat('EEEE, MMM d, yyyy').format(_selectedDate), style: TextStyle(fontSize: 16, color: ext.textPrimary)),
                     const Spacer(),
                     Icon(Icons.chevron_right, color: ext.textSecondary, size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Text('Reminder Time (Optional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: ext.textPrimary)),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _selectTime(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(color: ext.surface, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.clock, color: primary, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _selectedTime.isNotEmpty ? _selectedTime : 'No reminder',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _selectedTime.isNotEmpty ? ext.textPrimary : ext.textTertiary,
+                        ),
+                      ),
+                    ),
+                    if (_selectedTime.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => setState(() => _selectedTime = ''),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(Icons.close, color: ext.textTertiary, size: 18),
+                        ),
+                      )
+                    else
+                      Icon(Icons.chevron_right, color: ext.textSecondary, size: 20),
                   ],
                 ),
               ),
