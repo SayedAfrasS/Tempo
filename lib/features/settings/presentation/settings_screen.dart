@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/battery_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../shared/widgets/settings_tile.dart';
 import '../../../shared/widgets/theme_picker_bottom_sheet.dart';
@@ -59,12 +60,20 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               if (settings.taskReminders) ...[
-                SettingsTile(
-                  title: 'Reminder cycle',
-                  trailing: _trailingText(context, _cycleName(settings.reminderCycle)),
-                  onTap: () => _showSheet(context, const ReminderCyclePickerSheet()),
-                ),
                 const _BatteryTile(),
+                SettingsTile(
+                  title: 'Test Reminder (15s)',
+                  trailing: const Icon(Icons.timer, color: Colors.orange),
+                  onTap: () async {
+                    await NotificationService.instance.testScheduledReminder();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('Alarm set! Close the app and wait 15 seconds...'),
+                      ),
+                    );
+                  },
+                ),
               ],
 
               // ACCOUNT
@@ -112,15 +121,6 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => child,
     );
-  }
-
-  String _cycleName(ReminderCycle cycle) {
-    switch (cycle) {
-      case ReminderCycle.hours2: return '2 hr';
-      case ReminderCycle.hours4: return '4 hr';
-      case ReminderCycle.hours6: return '6 hr';
-      case ReminderCycle.hours8: return '8 hr';
-    }
   }
 }
 
@@ -170,7 +170,8 @@ class _BatteryTileState extends State<_BatteryTile> with WidgetsBindingObserver 
         children: [
           Text(
             ok ? 'On ✅' : 'Tap to enable',
-            style: TextStyle(color: ok ? const Color(0xFF22C55E) : ext.textTertiary),
+            style:
+                TextStyle(color: ok ? const Color(0xFF22C55E) : ext.textTertiary),
           ),
           const SizedBox(width: 8),
           Icon(Icons.chevron_right, color: ext.textTertiary),
