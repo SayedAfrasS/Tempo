@@ -94,6 +94,31 @@ flutter pub get
 2. In the SQL Editor, run the SQL schema required by the project to create the tasks table with Row-Level Security.
 3. From **Project Settings → API**, copy your **Project URL** and **anon public key**.
 
+```bash
+create table public.tasks (
+  id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  is_completed boolean not null default false,
+  task_date timestamptz not null,
+  time text,
+  category integer not null default 0,
+  repeat_rule integer not null default 0,
+  completed_dates jsonb not null default '[]'::jsonb,
+  subtasks jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.tasks enable row level security;
+
+create policy "users manage their own tasks"
+on public.tasks
+for all
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+```
+
 ### 4. Configure environment variables
 
 Create a `.env` file in the project root. This file should be listed in `.gitignore` and must not be committed.
